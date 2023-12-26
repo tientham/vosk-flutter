@@ -1,5 +1,12 @@
 package org.vosk.vosk_flutter;
 
+import android.content.Context;
+import android.media.AudioDeviceCallback;
+import android.media.AudioDeviceInfo;
+import android.media.AudioManager;
+import android.os.Build;
+import android.util.Log;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.plugin.common.MethodCall;
@@ -32,13 +39,17 @@ public class VoskFlutterPlugin implements FlutterPlugin, MethodCallHandler {
   private SpeechService speechService;
   private FlutterRecognitionListener recognitionListener;
 
+  private Context context;
+
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
+    context = flutterPluginBinding.getApplicationContext();
     channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "vosk_flutter");
     channel.setMethodCallHandler(this);
     recognitionListener = new FlutterRecognitionListener(flutterPluginBinding.getBinaryMessenger());
   }
 
+  @RequiresApi(api = Build.VERSION_CODES.M)
   @Override
   public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
     try {
@@ -205,6 +216,7 @@ public class VoskFlutterPlugin implements FlutterPlugin, MethodCallHandler {
           if (speechService == null) {
             try {
               speechService = new SpeechService(recognizersMap.get(recognizerId), sampleRate);
+              handleDetectAudioDevice();
             } catch (IOException e) {
               result.error("INITIALIZE_FAIL", e.getMessage(), null);
               break;
@@ -347,5 +359,24 @@ public class VoskFlutterPlugin implements FlutterPlugin, MethodCallHandler {
       model.close();
     }
     modelsMap.clear();
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.M)
+  private void handleDetectAudioDevice() {
+    AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+    audioManager.registerAudioDeviceCallback(new AudioDeviceCallback() {
+      @Override
+      public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
+        Log.d("AudioManager", "onAudioDevicesAdded: " + addedDevices);
+        audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+        audioManager.startBluetoothSco();
+        audioManager.setBluetoothScoOn(true);
+      }
+
+      @Override
+      public void onAudioDevicesRemoved(AudioDeviceInfo[] removedDevices) {
+        Log.d("AudioManager", "onAudioDevicesRemoved: " + removedDevices);
+      }
+    }, null);
   }
 }
