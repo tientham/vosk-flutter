@@ -361,22 +361,48 @@ public class VoskFlutterPlugin implements FlutterPlugin, MethodCallHandler {
     modelsMap.clear();
   }
 
-  @RequiresApi(api = Build.VERSION_CODES.M)
-  private void handleDetectAudioDevice() {
-    AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-    audioManager.registerAudioDeviceCallback(new AudioDeviceCallback() {
-      @Override
-      public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
-        Log.d("AudioManager", "onAudioDevicesAdded: " + addedDevices);
-        audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
-        audioManager.startBluetoothSco();
-        audioManager.setBluetoothScoOn(true);
-      }
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    private void handleDetectAudioDevice() {
+        AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        audioManager.registerAudioDeviceCallback(new AudioDeviceCallback() {
+            @Override
+            public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
+                Log.d("AudioManager", "onAudioDevicesAdded: " + addedDevices);
+                Log.d("AudioManager", "addedDevices.length: " + addedDevices.length);
 
-      @Override
-      public void onAudioDevicesRemoved(AudioDeviceInfo[] removedDevices) {
-        Log.d("AudioManager", "onAudioDevicesRemoved: " + removedDevices);
-      }
-    }, null);
-  }
+                boolean hasHeadsetDevice = false;
+                for (AudioDeviceInfo device : addedDevices) {
+                    Log.d("AudioManager", "Device type: " + device.getType());
+                    if (device.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP) {
+                        hasHeadsetDevice = true;
+                        break;
+                    }
+                }
+                if (hasHeadsetDevice) {
+                    audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+                    audioManager.startBluetoothSco();
+                    audioManager.setBluetoothScoOn(true);
+                }
+            }
+
+            @Override
+            public void onAudioDevicesRemoved(AudioDeviceInfo[] removedDevices) {
+                Log.d("AudioManager", "onAudioDevicesRemoved: " + removedDevices);
+                boolean hasHeadsetDevice = false;
+                for (AudioDeviceInfo device : removedDevices) {
+                    Log.d("AudioManager", "Device type: " + device.getType());
+                    if (device.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP) {
+                        hasHeadsetDevice = true;
+                        break;
+                    }
+                }
+                if (hasHeadsetDevice) {
+                    audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+                    audioManager.stopBluetoothSco();
+                    audioManager.setBluetoothScoOn(false);
+                    audioManager.setSpeakerphoneOn(false);
+                }
+            }
+        }, null);
+    }
 }
