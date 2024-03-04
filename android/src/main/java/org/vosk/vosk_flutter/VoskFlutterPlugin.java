@@ -368,14 +368,41 @@ public class VoskFlutterPlugin implements FlutterPlugin, MethodCallHandler {
       @Override
       public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
         Log.d("AudioManager", "onAudioDevicesAdded: " + addedDevices);
-        audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
-        audioManager.startBluetoothSco();
-        audioManager.setBluetoothScoOn(true);
+        Log.d("AudioManager", "addedDevices.length: " + addedDevices.length);
+
+        boolean hasHeadsetDevice = false;
+        for (AudioDeviceInfo device : addedDevices) {
+          Log.d("AudioManager", "Device type: " + device.getType());
+          if (device.getType() == 8) {
+            hasHeadsetDevice = true;
+            break;
+          }
+        }
+        if(hasHeadsetDevice){
+          audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+          audioManager.startBluetoothSco();
+          audioManager.setBluetoothScoOn(true);
+        }
       }
 
       @Override
       public void onAudioDevicesRemoved(AudioDeviceInfo[] removedDevices) {
         Log.d("AudioManager", "onAudioDevicesRemoved: " + removedDevices);
+
+        boolean hasHeadsetDevice = false;
+        for (AudioDeviceInfo device : removedDevices) {
+          Log.d("AudioManager", "Device type: " + device.getType());
+          if (device.getType() == 8) {
+            hasHeadsetDevice = true;
+            break;
+          }
+        }
+        if(hasHeadsetDevice){
+          audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+          audioManager.stopBluetoothSco();
+          audioManager.setBluetoothScoOn(false);
+          audioManager.setSpeakerphoneOn(false);
+        }
       }
     }, null);
   }
