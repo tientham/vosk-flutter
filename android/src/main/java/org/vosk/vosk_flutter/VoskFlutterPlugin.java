@@ -364,6 +364,8 @@ public class VoskFlutterPlugin implements FlutterPlugin, MethodCallHandler {
     @RequiresApi(api = Build.VERSION_CODES.M)
     private void handleDetectAudioDevice() {
         AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVolume, 0);
         audioManager.registerAudioDeviceCallback(new AudioDeviceCallback() {
             @Override
             public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
