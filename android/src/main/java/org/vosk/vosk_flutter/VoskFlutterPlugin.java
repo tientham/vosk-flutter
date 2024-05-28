@@ -284,6 +284,12 @@ public class VoskFlutterPlugin implements FlutterPlugin, MethodCallHandler {
         }
         break;
 
+        case "speechService.setMaxVolume": {
+          handleMaxVolume();
+          result.success(null);
+        }
+        break;
+
         default:
           result.notImplemented();
           break;
@@ -364,10 +370,6 @@ public class VoskFlutterPlugin implements FlutterPlugin, MethodCallHandler {
     @RequiresApi(api = Build.VERSION_CODES.M)
     private void handleDetectAudioDevice() {
         AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-        int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-        int maxCallVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL);
-        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVolume, 0);
-        audioManager.setStreamVolume(AudioManager.STREAM_VOICE_CALL, maxCallVolume, 0);
         audioManager.registerAudioDeviceCallback(new AudioDeviceCallback() {
             @Override
             public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
@@ -386,8 +388,7 @@ public class VoskFlutterPlugin implements FlutterPlugin, MethodCallHandler {
                     audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
                     audioManager.startBluetoothSco();
                     audioManager.setBluetoothScoOn(true);
-                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVolume, 0);
-                    audioManager.setStreamVolume(AudioManager.STREAM_VOICE_CALL, maxCallVolume, 0);
+                    handleMaxVolume();
                 }
             }
 
@@ -410,5 +411,16 @@ public class VoskFlutterPlugin implements FlutterPlugin, MethodCallHandler {
                 }
             }
         }, null);
+    }
+
+    private void handleMaxVolume() {
+        AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVolume, 0);
+
+        // Android is using int 6 for bluetooth volume
+        // https://stackoverflow.com/questions/32321794/bluetooth-hands-free-client-volume-control
+        int maxCallVolume = audioManager.getStreamMaxVolume(6);
+        audioManager.setStreamVolume(6, maxCallVolume, 0);
     }
 }

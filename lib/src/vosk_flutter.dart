@@ -171,6 +171,10 @@ class VoskFlutterPlugin {
     }
     return modelPointer.address;
   }
+
+  Future<void> setMaxVolume() async {
+    await _channel.invokeMethod('speechService.setMaxVolume');
+  }
 }
 
 /// An exception thrown when the user denies access to the microphone.
